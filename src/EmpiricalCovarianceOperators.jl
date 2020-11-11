@@ -1,6 +1,6 @@
 module EmpiricalCovarianceOperators
     using LowRankApprox: AbstractLinearOperator, LinearOperator, pheigfact, PartialHermitianEigen
-    import Base: convert, size, transpose
+    import Base: convert, size, transpose, show
     using Nullables
     import LinearAlgebra
     using LinearAlgebra: UniformScaling, I, Diagonal

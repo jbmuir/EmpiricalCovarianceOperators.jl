@@ -8,6 +8,7 @@ end
 
 mutable struct CovarianceOperator{T<:Real} <: AbstractLinearOperator{T}
     p::Int
+    n::Int
     mul!::Function
     _tmp::Nullable{Array{T}}
 end
@@ -17,7 +18,7 @@ function CovarianceOperator(X)
     n, p = size(X)
     Xm = mean(X, dims=1)
     ml! = (y, _, x) -> covmul!(y, X.-Xm, n, x)
-    CovarianceOperator{T}(p, ml!, nothing)
+    CovarianceOperator{T}(p, n, ml!, nothing)
 end
 
 Base.convert(::Type{LinearOperator}, A::CovarianceOperator) = convert(LinearOperator{eltype(A)}, A)
@@ -28,6 +29,12 @@ LinearAlgebra.ishermitian(A::CovarianceOperator) = true
 LinearAlgebra.issymmetric(A::CovarianceOperator) = isreal(A)
 Base.size(A::CovarianceOperator) = (A.p, A.p)
 Base.size(A::CovarianceOperator, dim::Integer) = (dim == 1 || dim == 2) ? A.p : 1
+function Base.show(io::IO, C::CovarianceOperator) 
+    print(io, "CovarianceOperator(size = ", C.p)
+    print(io, "x", C.p)
+    print(io, ", samples = ", C.n)
+    print(io, ")")
+end
 
 function crosscovmul!(y, Xc, Yc, n, x)
     y = Xc'*(Yc*x)./(n-1)
@@ -36,6 +43,7 @@ end
 mutable struct CrossCovarianceOperator{T<:Real} <: AbstractLinearOperator{T}
     p::Int
     q::Int
+    n::Int
     mul!::Function
     mulc!::Function
     _tmp::Nullable{Array{T}}
@@ -55,7 +63,7 @@ function CrossCovarianceOperator(X, Y)
     Ym = mean(Y,dims=1)
     ml! = (y, _, x) -> crosscovmul!(y, X.-Xm, Y.-Ym, nx, x)
     mulc! = (y, _, x) -> crosscovmul!(y, Y.-Ym, X.-Xm, nx, x)
-    CrossCovarianceOperator{Tx}(p, q, ml!, mulc!, nothing)
+    CrossCovarianceOperator{Tx}(p, q, nx, ml!, mulc!, nothing)
 end
 
 Base.convert(::Type{LinearOperator}, A::CrossCovarianceOperator) = convert(LinearOperator{eltype(A)}, A)
@@ -67,3 +75,9 @@ LinearAlgebra.issymmetric(A::CrossCovarianceOperator) = false
 Base.size(A::CrossCovarianceOperator) = (A.p, A.q)
 #this is a ``read only'' shortcircuiting way to match the dim - see julia shortcircuiting rules to understand
 Base.size(A::CrossCovarianceOperator, dim::Integer) = (dim == 1 && return A.p) || (dim == 2) ? A.q : 1
+function Base.show(io::IO, C::CrossCovarianceOperator) 
+    print(io, "CrossCovarianceOperator(size = ", C.p)
+    print(io, "x", C.q)
+    print(io, ", samples = ", C.n)
+    print(io, ")")
+end
